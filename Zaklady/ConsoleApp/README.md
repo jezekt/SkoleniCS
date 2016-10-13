@@ -58,3 +58,11 @@ namespace JezekT.SkoleniCS.Zaklady.ConsoleApp
 * jakoukoliv klávesou konzoli ukončit.
 
 >Bonus - Stejný program nyní vytvořit bez Visual Studia za pomoci `csc.exe`.
+
+### Step 2 - Datové typy, promenne a výrazy
+* přehled datových typů jazyka `C#` je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/types-and-variables);
+* výrazy jazyka `C#` jsou uvedeny [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/expressions).
+### Step 3 - Výčtové typy
+* popis výčtových typů je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/enums).
+### Step 4 - Příkazy
+* přehled příkazů je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/statements).
