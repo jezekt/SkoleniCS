@@ -282,6 +282,57 @@ private static void VypisVystup(string text, DruhVystupu druhVystupu)
     Console.WriteLine(text);
     Console.ForegroundColor = ConsoleColor.White;
 }
+```
 
+### 6 - Pole
+* popis polí je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/arrays);
+* jednorozmìrná pole - definice a naplnìní
+```c#
+private static int[] GetPoleCisel(int velikost)
+{
+    var cisla = new int[velikost]; // vytvoøení pole o dané velikosti
+    for (int i = 0; i < cisla.Length; i++)
+    {
+        cisla[i] = i + 1; // naplnìní konkrétního prvku pole hodnotou
+    }
+    return cisla;
+}
+```
+
+* jednorozmìrná pole - inicializace
+```c#
+// Další zpùsoby vytvoøení pole
+var definovanaCislaA = new int[] { 3, 6, 9, 12, 15, 18, 21, 24, 27, 30 };
+var definofavaCislaB = new[] { 3, 6, 9, 12, 15, 18, 21, 24, 27, 30 };
+int[] definovanaCislaC = { 3, 6, 9, 12, 15, 18, 21, 24, 27, 30 };
+
+var tretiPrvek = definovanaCislaC[2]; // získání hodnoty tøetího prvku pole pomocí indexu (index je od 0 do n)
+```
+
+* vícerozmìrná pole
+```c#
+var matice = new int[i, j]; // definice dvojrozmìrného pole
+
+int hodnota = 0;
+for (int k = 0; k < i; k++)
+{
+    for (int l = 0; l < j; l++)
+    {
+        matice[k, l] = hodnota; // naplnìní hodnoty prvku pole øádku k a sloupce l
+        hodnota++;
+    }
+    hodnota = 0;
+}
+```
+
+* vícenásobná pole
+```c#
+var hlavniPole = new int[i][]; // definice pole polí
+for (int k = 0; k < i; k++)
+{
+    var prvek = GetPoleCisel(k+1);
+    hlavniPole[k] = prvek; // prvek hlavního pole je pole èísel
+}
+return hlavniPole;
 ```
 
