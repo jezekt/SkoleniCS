@@ -82,7 +82,7 @@ else
 
 ### 4 - Pøíkazy
 * pøehled pøíkazù je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/statements);
-* podmínky `If`
+* podmínky `if`
 ```c#
 var i = 5;
 
@@ -336,3 +336,131 @@ for (int k = 0; k < i; k++)
 return hlavniPole;
 ```
 
+### 7 - Tøídy
+* popis tøíd je uveden [zde](https://docs.microsoft.com/cs-cz/dotnet/articles/csharp/tour-of-csharp/classes-and-objects);
+
+>Poznámka - Tøídy lze chápat jako pøedpis/schéma, podle kterého se vytváøí objekty. K vytvoøení objektu konkrétní tøídy se používá klíèové slovo *new*. 
+
+* zápis jednoduché tøídy
+```c#
+public class Kontakt
+{
+    // PROPERTIES - VLASTNOSTI
+    public string Jmeno { get; }
+    public string Prijmeni { get; }
+    public string Telefon { get; }
+
+    // METHODS - METODY
+    public void VypisDetaily()
+    {
+        Console.WriteLine("Jméno: " + Jmeno + "; Pøíjmení: " + Prijmeni + "; Telefon: " + Telefon + ".");
+    }
+
+    // CONSTRUCTORS - KONSTRUKTORY
+    public Kontakt(string jmeno, string prijmeni, string telefon)
+    {
+        Jmeno = jmeno;
+        Prijmeni = prijmeni;
+        Telefon = telefon;
+    }
+}
+``` 
+* použití tøídy `Kontakt`
+```c#
+    // pole Kontaktù se tøemi instancemi tøídy Kontakt
+    var seznamKontaktu = new[]
+    {
+        new Kontakt("Jan", "Novák", "111 202 303"),
+        new Kontakt("Jiøí", "Èech", "333 123 321"),
+        new Kontakt("Kamil", "Chvátal", "888 888 888")
+    };
+
+    foreach (var kontakt in seznamKontaktu)
+    {
+        kontakt.VypisDetaily();
+    }
+```
+* složitìjší tøída
+```c#
+public class Budik
+{
+    // FIELDS - PROMÌNNÉ
+    private readonly Timer _timer;
+
+
+    // EVENTS - UDÁLOSTI
+    public event Action Buzeni;
+
+
+    // PROPERTIES - VLASTNOSTI
+    public DateTime CasBuzeni { get; private set; }
+    public bool BudikZapnut { get; private set; }
+    public bool VypisujCas { get; set; }
+
+
+    // METHODS - METODY
+    public void NastavitBudik(DateTime casBuzeni)
+    {
+        if (casBuzeni <= DateTime.Now)
+        {
+            throw new ArgumentException("Èas buzení spadá do minulosti."); // výjimka v pøípadì, kdy se uživatel pokusí nastavit èas buzení v minulosti
+        }
+
+        CasBuzeni = casBuzeni;
+    }
+        
+    public void ZapnoutBudik()
+    {
+        BudikZapnut = true;
+        _timer.Start();
+    }
+
+    public void VypnoutBudik()
+    {
+        BudikZapnut = false;
+        _timer.Stop();
+    }
+
+
+    // CONSTRUCTORS - KONSTRUKTORY
+    public Budik()
+    {
+        _timer = new Timer(1000); // vytvoøení nové instance èasovaèe - nastaveno na 1000 ms
+        _timer.Elapsed += OnTimerElapsed; // nastavení události pøi uplynutí nastavené doby èasovaèe
+    }
+
+
+    // PRIVÁTNÍ METODY - pro pøehlednost jsou umístìny pod konstruktorem
+    private void OnTimerElapsed(object sender, ElapsedEventArgs e)
+    {
+        var aktualniCas = DateTime.Now;
+        if (VypisujCas)
+        {
+            Console.WriteLine(aktualniCas);
+        }
+
+        if (BudikZapnut && SpustitBuzeni(aktualniCas)) // pokud je budík zapnut a má se spustit buzení
+        {
+            Buzeni?.Invoke(); // vyvolá událost buzení
+            VypnoutBudik();
+        }
+    }
+
+    private bool SpustitBuzeni(DateTime aktualniCas)
+    {
+        return aktualniCas.Second == CasBuzeni.Second && // kontrola sekund
+                Math.Abs((CasBuzeni - aktualniCas).TotalSeconds) < 1; // kontrola zbytku (rok, mìsíc, den, ...)
+    }
+}
+```
+* použití tøídy `Budik`
+```c#
+var budik = new Budik {VypisujCas = true}; // vytvoøení nové instance tøídy Budik
+budik.Buzeni += OnBuzeni; // pøipsání ke sledování událost Buzeni - metoda OnBuzeni()  
+budik.NastavitBudik(DateTime.Now.AddSeconds(5)); // nastavení budíku na 5 s dopøedu
+Console.WriteLine($"Budík nastaven na {budik.CasBuzeni}.");
+
+budik.ZapnoutBudik();
+```
+
+>Poznámka - Pøi psaní tøíd je vhodné dodržovat základní principy viz [SOLID](http://www.codeproject.com/Articles/703634/SOLID-architecture-principles-using-simple-Csharp). 
