@@ -205,3 +205,113 @@ public class XmlFileLogger
 ```
 
 * v hlavní metodě a ve třídě `ConsoleEquationSolver` byl změněn použitý typ loggeru.
+
+#### Step 3 - Logování dle výběru
+* byl zadán požadavek, aby si uživatel mohl vybrat mezi logováním do souboru *.txt a *.xml;
+* předchozí řešení, kdy byl v kódu změněn typ loggeru již fungovat nebude, jelikož v běhu programu nelze zadaný typ měnit;
+* je proto potřeba vytvořit typ, který bude reprezentovat oba výše zmíněné loggery. `TxtFileLogger` a `XmlFileLogger` mají následující společné znaky:
+	* oba slouží k logování do souboru;
+	* oba si v konstruktoru předávají cestu souboru;
+	* oba mají metodu *Log(LogLevel, string)*;
+* bude tedy vytvořen typ `FileLoggerBase`, který výše popsané znaky sdruží a od kterého budou oba loggery dědit.
+
+##### FileLoggerBase
+
+```c#
+public abstract class FileLoggerBase
+{
+    protected readonly string FilePath;
+
+
+    public abstract void Log(LogLevel level, string message);
+
+
+    protected FileLoggerBase(string filePath)
+    {
+        FilePath = filePath;
+    }
+}
+```
+
+* slovo `abstract` v deklaraci třídy říká, že se jedná o abstraktní třídu. Taková třída nemůže být instancována (nelze z ní vytvořit objekt). Objekty mohou být vytvořeny pouze ze tříd, které od této třídy dědí, pokud nejsou také abstraktní;
+* v konstruktoru třídy je předána cesta souboru. Tato cesta je dále naplněna do proměnné *FilePath*. Modifikátor `protected` omezuje přístupnost proměnné pouze na třídu `FileLoggerBase` samotnou a na všechny její potomky;
+* abstraktní metoda *Log(LogLevel, string)* nemá žádné tělo. To vyplývá právě z toho, že je abstraktní. Abstraktní členy třídy nemají implementaci. Pouze říkají, že potomci, kteří od této třídy dědí, musí tyto členy implementovat.
+
+##### Úprava TxtFileLogger
+
+* `TxtFileLogger` a `XmlFileLogger` budou nyní dědit od třídy `FileLoggerBase` (ukázáno na `TxtFileLogger`, úpravy v `XmlFileLogger` jsou obdobné)
+
+```c#
+public class TxtFileLogger : FileLoggerBase
+{
+    public override void Log(LogLevel level, string message)
+    {
+        var text = $"{DateTime.Now} {level}: {message}" + Environment.NewLine;
+        File.AppendAllText(FilePath, text);
+    }
+
+
+    public TxtFileLogger(string filePath) : base(filePath)
+    {
+    }
+}
+```
+
+* dědičnost se nastavuje v deklaraci třídy. Třída, od které se dědí (*base class* - *mateřská třída*), se napíše za dvojtečku;
+* jelikož mateřská třída obsahuje proměnnou *FilePath*, mohla být původní privátní proměnná *_filePath* odstraněna. V konstruktoru třídy však musí být předána cesta souboru mateřské třídě (za konstruktorem *: base(filePath)*);
+* mateřská třída také říká, že každý potomek musí implementovat metodu *Log(LogLevel, string)*. Třída `TxtFileLogger` tedy musí mít ve svém zápisu přepsání (`override`) této metody.
+
+##### Změna typu loggeru
+* všude, kde byl doposud použit typ `XmlFileLogger` se nyní použije společný typ `FileLoggerBase`.
+
+##### Výběr loggeru - ConsoleFileLoggerFactory
+* zbývá vytvořit nějaký typ, který bude umožňovat výběr loggeru.
+
+```c#
+public class ConsoleFileLoggerFactory
+{
+    private readonly string _folderPath;
+
+
+    public FileLoggerBase Create()
+    {
+        while (true)
+        {
+            Console.WriteLine("Vyberte typ souboru pro logování: *.txt (T) nebo *.xml (X)?");
+            var input = Console.ReadLine()?.ToUpper();
+            if (input == "T")
+            {
+                return new TxtFileLogger(Path.Combine(_folderPath, "log.txt"));
+            }
+            if (input == "X")
+            {
+                return new XmlFileLogger(Path.Combine(_folderPath, "log.xml"));
+            }
+            Console.WriteLine("Neplatný výběr.");
+        }
+    }
+
+
+    public ConsoleFileLoggerFactory(string folderPath)
+    {
+        _folderPath = folderPath;
+    }
+}
+```
+
+##### Hlavní metoda programu
+* do hlavní metody programu bylo doplněno vytvoření objektu typu `ConsoleFileLoggerFactory` a jeho následné použití při vytvoření loggeru
+
+```c#
+static void Main()
+{
+    var loggerFactory = new ConsoleFileLoggerFactory(AppDomain.CurrentDomain.BaseDirectory);
+    var logger = loggerFactory.Create();
+    var equationSolver = new ConsoleEquationSolver(new Kalkulator(), new ConsoleInputReader(), logger);
+    while (true)
+    {
+        equationSolver.TwoVariablesEquation();
+        Console.ReadLine();
+    }
+}
+```
