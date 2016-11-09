@@ -315,3 +315,123 @@ static void Main()
     }
 }
 ```
+
+#### Step 4 - Logování kamkoliv
+* byl zadán požadavek, aby se logování mohlo provádět kromě souborů také do konzole a časem možná i do databáze;
+* k naplnění tohoto požadavku již nebude stačit třída `FileLoggerBase`, jelikož ta se dá použít jen na zápis do souborů. Požadavek je však i na zápis do konzole;
+* bude tedy potřeba vytvořit typ společný pro všechny loggery. Řešením by bylo vytvořit typ `LoggerBase`, který by měl pouze jednu abstraktní metodu *Log(LogLevel, string)* a nic víc. Od tohoto typu by pak všechny loggery dědily;
+* mateřská třída by neměla žádnou implementaci a ani by neumožňovala mít nějaký stav (např. ve vlastnosti nebo fieldu). V tom případě by bylo lepší místo *abstraktní třídy* použít *rozhraní* ([interface](https://msdn.microsoft.com/cs-cz/library/87d83y5b.aspx));
+
+##### Interface
+* rozhraní lze považovat za kotrakt, který říká, co třída k němu přihlášená musí implementovat;
+* třída implementuje rozhraní (přihlašuje se ke kontraktu) stejně, jako by od něj dědila;
+* zásadní výhoda oproti dědění z mateřské třídy je ta, že dědit lze pouze z jednoho typu, kdežto implementovat lze několik rozhraní;
+
+##### Zjednodušený příklad
+„Pro lepší představu opět použiji příklad s roboty. Než přišel požadavek na logování i do konzole, fungovala aplikace následovně:
+
+1. vytvořila se výrobní linka na roboty (linka typu `ConsoleFileLoggerFactory`), kteří dokáží logovat do souboru (z linky budou vždy vycházet navenek stejní roboti, avšak s různými vnitřními díly - v závislosti na druhu souboru);
+2. uživatel vybral, do jakého souboru chce logovat a linka vytvořila robota. Jeho vnitřní části odpovídají volbě uživatele. Linka při výrobě použila společné tělo (typu `FileLoggerBase`, které má proměnnou *FilePath* a dále výrobce uvádí, že umí logovat - abstraktní metoda *Log(LogLevel, string)*), do kterého dodala vnitřní části podle účelu (*.txt nebo *.xml);
+3. vytvořený logovací robot se poté společně s robotem, který umí počítat a robotem, který umí číst, použily při výrobě řídícího robota;
+4. řídící robot poté v cyklu prováděl řízení výpočtu.
+
+S příchodem požadavku na logování i do konzole se situace změnila. Robot, který by měl logovat do konzole nemůže být v těle, které je určeno pro logování do souboru. Obsahoval by proměnnou *FilePath*, která by mu byla k ničemu. Nebudeme tedy vytvářet nějaké konkrétní společné tělo pro všechny logovací roboty, ale místo toho řekneme, že chceme **nějakého** robota, který **umí logovat** (tj. implementuje metodu *Log(LogLevel, string)*). Přesně k tomuto slouží rozhraní. Vytvoříme si tedy rozhraní `ILogger`, které nám bude říkat, že jakýkoliv implementující typ bude muset být schopen provést po svém metodu *Log(LogLevel, string)*.“
+
+##### Rozhraní ILogger
+* název každého rozhraní začíná velkým písmenem *"I"* (*i - interface*). Proto název rozhraní loggeru je *ILogger*;
+* rozhraní není nic jiného, než jakýsi kontrakt, který říká, co typ implementující toto rozhraní bude umět;
+* v rozhraní se definuje pouze funkčnost, která je veřejně přístupná, tj. `public`. Z toho důvodu se v rozhraní neuvádí modifikátor přístupnosti;
+* definice rozhraní `ILogger`
+
+```c#
+public interface ILogger
+{
+    void Log(LogLevel level, string message);
+}
+```
+
+##### Třída ConsoleLoggerFactory
+* tato třída slouží k vytváření loggerů (typu `ILogger`). Jediná věc, kterou objekt vytvořený touto třídou bude umět je logování (metoda *Log(LogLevel, string)*);
+* třída `ConsoleLoggerFactory` vyžaduje pro své fungování instanci třídy `ConsoleFileLoggerFactory`. Instance je předána v konstruktoru.
+
+```c#
+public class ConsoleLoggerFactory
+{
+    private readonly ConsoleFileLoggerFactory _fileLoggerFactory;
+
+    public ILogger Create()
+    {
+        while (true)
+        {
+            Console.WriteLine("Vyberte typ logování: konzole (K); soubor (S); debug output (D)?");
+            var input = Console.ReadLine()?.ToUpper();
+            if (input == "K")
+            {
+                return new ConsoleLogger();
+            }
+            if (input == "S")
+            {
+                return _fileLoggerFactory.Create();
+            }
+            if (input == "D")
+            {
+                return new TraceListenerLogger();
+            }
+            Console.WriteLine("Neplatný výběr.");
+        }
+    }
+
+
+    public ConsoleLoggerFactory(ConsoleFileLoggerFactory fileLoggerFactory)
+    {
+        if (fileLoggerFactory == null) throw new ArgumentNullException();
+        Contract.EndContractBlock();
+
+        _fileLoggerFactory = fileLoggerFactory;
+    }
+}
+```
+
+##### ConsoleLogger a TraceListenerLogger
+* tyto třídy umožňují logování do konzole a do výstupu ladění (Debug Output);
+* obě třídy implementují rozhraní `ILogger` (stejně tak `FileLoggerBase` a tím i `TxtFileLogger` a `XmlFileLogger`)
+
+```c#
+public class ConsoleLogger : ILogger
+{
+    public void Log(LogLevel level, string message)
+    {
+        Console.WriteLine($"{DateTime.Now} {level}: {message}");
+    }
+}
+
+public class TraceListenerLogger : ILogger
+{
+    public void Log(LogLevel level, string message)
+    {
+        Debug.Print($"{DateTime.Now} {level}: {message}");
+    }
+}
+```
+
+##### Změna typu loggeru
+* všude, kde byl doposud použit typ `FileLoggerBase` se nyní použije rozhraní `ILogger`.
+
+##### Hlavní metoda programu
+* v hlavní metodě programu se nyní vytváří objektu typu `ConsoleLoggerFactory`, který ke svému fungování potřebuje objekt typu `ConsoleFileLoggerFactory`
+
+```c#
+static void Main()
+{
+    var loggerFactory = new ConsoleLoggerFactory(new ConsoleFileLoggerFactory(AppDomain.CurrentDomain.BaseDirectory));
+    var logger = loggerFactory.Create();
+    var equationSolver = new ConsoleEquationSolver(new Kalkulator(), new ConsoleInputReader(), logger);
+    while (true)
+    {
+        equationSolver.TwoVariablesEquation();
+        Console.ReadLine();
+    }
+}
+```
+
+* proměnná *logger* je nyní typu `ILogger`. V této proměnné mohou být objekty všech typů, které implementují rozhraní `ILogger` (tj. `FileLoggerBase`, `TxtFileLogger`, `XmlFileLogger`, `ConsoleLogger` a `TraceListenerLogger`). 
