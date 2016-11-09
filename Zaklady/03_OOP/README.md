@@ -26,7 +26,8 @@ Potřeboval bych ještě nějakého, který využije ty dva a společně tak už
 >Poznámka - Ve zjednodušeném příkladu se programátor na kód nedívá jako na výčet proměnných a metod poskládaných do funkčního celku, ale chápe ho jako prostředek, pomocí kterého vytváří vlastní prostředí, kde **objekty** zabezpečují fungování systému.
 
 ### 2 Dědičnost a polymorfismus
-* dědičnost a polymorfismus budou vysvětleny v několika krocích
+* infomrace o dědičnosti a polymorfismu lze získat [zde](http://www.itnetwork.cz/csharp/oop/c-sharp-tutorial-dedicnost-a-polymorfismus);
+* v následujících krocích je názorné vysvětlení
 
 #### Step 1 - Logování
 * byl zadán požadavek, aby současný konzolový kalkulátor umožňoval záznam kroků uživatele do textového souboru. Pro naplnění tohoto požadavku byla vytvořena třída `TxtFileLogger`
@@ -418,7 +419,7 @@ public class TraceListenerLogger : ILogger
 * všude, kde byl doposud použit typ `FileLoggerBase` se nyní použije rozhraní `ILogger`.
 
 ##### Hlavní metoda programu
-* v hlavní metodě programu se nyní vytváří objektu typu `ConsoleLoggerFactory`, který ke svému fungování potřebuje objekt typu `ConsoleFileLoggerFactory`
+* v hlavní metodě programu se nyní vytváří objekt typu `ConsoleLoggerFactory`, který ke svému fungování potřebuje objekt typu `ConsoleFileLoggerFactory`
 
 ```c#
 static void Main()
